@@ -2,28 +2,35 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 import datetime
 
-def update_user(db: Session, user_id: int, username: str = None, email: str = None):
+def update_user(db: Session, user_id: int, username: str = None, email: str = None, password: str = None):
     user = db.query(User).filter(User.id == user_id).first()
-    
+
     if not user:
         return {"error": "Usuario no encontrado"}
 
-    # Actualizar solo los campos que se proporcionan en la solicitud
-    if username:
+    updated = False
+
+    if username is not None and user.username != username:
         user.username = username
-    if email:
+        updated = True
+
+    if email is not None and user.email != email:
         user.email = email
+        updated = True
 
-    # Asegurar que `updatedAt` se actualiza siempre
-    user.updatedAt = datetime.datetime.utcnow()
+    if password is not None:
+        user.password = password
+        updated = True
 
-    db.commit()  # Guardar los cambios en la base de datos
-    db.refresh(user)  # Refrescar la instancia con los valores nuevos desde la BD
+    # Asegurar que updatedAt siempre se actualiza cuando hay cambios
+    if updated:
+        user.updatedAt = datetime.datetime.utcnow()
+        db.commit()  # Confirmar cambios en la base de datos
+        db.refresh(user)  # Refrescar la instancia con los valores nuevos
 
     return {"message": "Usuario actualizado con éxito", "user": {
         "id": user.id,
         "username": user.username,
         "email": user.email,
-        "createdAt": user.createdAt,
         "updatedAt": user.updatedAt
     }}
