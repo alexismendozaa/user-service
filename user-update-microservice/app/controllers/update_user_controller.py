@@ -9,22 +9,22 @@ def update_user(user_id: int, username: str = None, email: str = None, password:
     update_fields = []
     params = []
 
-    if username is not None:
+    if username:
         update_fields.append("username = %s")
         params.append(username)
 
-    if email is not None:
+    if email:
         update_fields.append("email = %s")
         params.append(email)
 
-    if password is not None:
+    if password:
         update_fields.append("password = %s")
         params.append(password)
 
     if not update_fields:
-        return {"error": "No se enviaron campos para actualizar"}
+        return {"error": "No se enviaron campos válidos para actualizar"}
 
-    # Agregar la actualización de updatedAt
+    # Agregar updatedAt para registrar la actualización
     update_fields.append("updatedAt = %s")
     params.append(datetime.datetime.utcnow())
 
@@ -32,7 +32,7 @@ def update_user(user_id: int, username: str = None, email: str = None, password:
     params.append(user_id)
 
     query = f"UPDATE \"Users\" SET {', '.join(update_fields)} WHERE id = %s RETURNING id, username, email, updatedAt;"
-    
+
     try:
         cursor.execute(query, params)
         updated_user = cursor.fetchone()
