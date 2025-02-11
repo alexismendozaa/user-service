@@ -6,11 +6,19 @@ def update_user(db: Session, user_id: int, username: str = None, email: str = No
     if not user:
         return {"error": "Usuario no encontrado"}
 
-    if username:
-        user.username = username
-    if email:
-        user.email = email
+    updated = False  # Flag para saber si hubo cambios
 
-    db.commit()
-    db.refresh(user)
+    if username and user.username != username:
+        user.username = username
+        updated = True
+
+    if email and user.email != email:
+        user.email = email
+        updated = True
+
+    if updated:
+        db.commit()  # Guardar solo si hubo cambios
+        db.refresh(user)  # Asegurar que los datos reflejan la BD
+
     return {"message": "Usuario actualizado con éxito", "user": user}
+
