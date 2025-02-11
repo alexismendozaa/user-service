@@ -16,8 +16,8 @@ def update_user(db: Session, user_id: int, username: str = None, email: str = No
         update_data["email"] = email
 
     if update_data:
-        db.query(User).filter(User.id == user_id).update(update_data)
+        db.query(User).filter(User.id == user_id).update(update_data, synchronize_session=False)
         db.commit()
-        user = db.query(User).filter(User.id == user_id).first()  # Obtener el usuario actualizado
     
+    user = db.query(User).filter(User.id == user_id).first()  # Volver a obtener el usuario actualizado
     return {"message": "Usuario actualizado con éxito", "user": user}
