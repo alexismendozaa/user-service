@@ -8,20 +8,20 @@ def update_user(db: Session, user_id: int, username: str = None, email: str = No
     if not user:
         return {"error": "Usuario no encontrado"}
 
-    update_data = {}
-    
+    updated = False  # Bandera para saber si se realizaron cambios
+
     if username and user.username != username:
-        update_data["username"] = username
+        user.username = username
+        updated = True
 
     if email and user.email != email:
-        update_data["email"] = email
+        user.email = email
+        updated = True
 
-    # ⚠️ Asegurar que el campo updatedAt también se actualice manualmente
-    update_data["updatedAt"] = datetime.datetime.utcnow()
+    # ⚠️ Asegurar que updatedAt siempre se actualiza
+    if updated:
+        user.updatedAt = datetime.datetime.utcnow()
+        db.commit()  # Guardar los cambios en la base de datos
+        db.refresh(user)  # Refrescar la instancia con los valores nuevos
 
-    if update_data:
-        db.query(User).filter(User.id == user_id).update(update_data, synchronize_session=False)
-        db.commit()
-    
-    user = db.query(User).filter(User.id == user_id).first()  # Volver a obtener el usuario actualizado
     return {"message": "Usuario actualizado con éxito", "user": user}
