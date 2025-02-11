@@ -1,0 +1,50 @@
+name: Deploy User Update Microservice
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-user-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image for user-update-microservice
+        run: |
+          cd user-update-microservice
+          docker build -t alexismendozaa/user-update-microservice .
+          docker push alexismendozaa/user-update-microservice:latest
+
+      - name: Set up SSH key for deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST_UPDATE }} >> ~/.ssh/known_hosts
+
+      - name: SSH to EC2 and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST_UPDATE }} << 'EOF'
+            docker stop user-update-microservice || true
+            docker rm user-update-microservice || true
+            docker pull alexismendozaa/user-update-microservice:latest
+            docker run -d -p 4002:4002 --name user-update-microservice \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_USER=${{ secrets.DB_USER }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              alexismendozaa/user-update-microservice:latest
+          EOF
