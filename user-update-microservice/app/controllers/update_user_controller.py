@@ -8,26 +8,29 @@ def update_user(db: Session, user_id: int, username: str = None, email: str = No
     if not user:
         return {"error": "Usuario no encontrado"}
 
-    update_data = {}
+    updated = False  # Bandera para saber si hubo cambios
 
     if username is not None and user.username != username:
-        update_data["username"] = username
+        user.username = username
+        updated = True
 
     if email is not None and user.email != email:
-        update_data["email"] = email
+        user.email = email
+        updated = True
 
     if password is not None:
-        update_data["password"] = password  # Se recomienda encriptar en el futuro
+        user.password = password  # Se recomienda encriptar antes de almacenar
+        updated = True
 
-    if update_data:
-        update_data["updatedAt"] = datetime.datetime.utcnow()  # Forzar actualización de updatedAt
-        db.query(User).filter(User.id == user_id).update(update_data, synchronize_session=False)
-        db.commit()  # Confirmar los cambios
-        user = db.query(User).filter(User.id == user_id).first()  # Obtener el usuario actualizado
-    
+    if updated:
+        user.updatedAt = datetime.datetime.utcnow()
+        db.commit()  # Confirmar los cambios en la base de datos
+        db.refresh(user)  # Refrescar la instancia con los valores nuevos
+
     return {"message": "Usuario actualizado con éxito", "user": {
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "password": user.password,  # Solo para pruebas, deberías ocultarlo en producción
         "updatedAt": user.updatedAt
     }}
