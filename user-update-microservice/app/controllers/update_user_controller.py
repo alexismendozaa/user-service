@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
+import datetime
 
 def update_user(db: Session, user_id: int, username: str = None, email: str = None):
     user = db.query(User).filter(User.id == user_id).first()
@@ -14,6 +15,9 @@ def update_user(db: Session, user_id: int, username: str = None, email: str = No
 
     if email and user.email != email:
         update_data["email"] = email
+
+    # ⚠️ Asegurar que el campo updatedAt también se actualice manualmente
+    update_data["updatedAt"] = datetime.datetime.utcnow()
 
     if update_data:
         db.query(User).filter(User.id == user_id).update(update_data, synchronize_session=False)
